@@ -1,0 +1,41 @@
+{
+  "name": "@trackcore/react-native",
+  "version": "0.1.0",
+  "description": "TrackCore React Native SDK core — the JavaScript SDK's transport, retry policy, error mapping, decimal parser and credential handling, specialised for a device.",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "react-native": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:live": "TRACKCORE_LIVE_BASE_URL=${TRACKCORE_LIVE_BASE_URL} jest --testPathPatterns live",
+    "example": "ts-node --compiler-options {\"module\":\"commonjs\"} example/quickstart.ts"
+  },
+  "dependencies": {
+    "@trackcore/sdk": "file:../js"
+  },
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": ">=1.21.0",
+    "react-native": ">=0.72.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.18.12",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

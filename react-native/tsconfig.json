@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    /*
+     * ES2020, not ES2022.
+     *
+     * Hermes is not V8. It reached ES2015-with-most-of-ES2021 and has filled in
+     * from there; class static blocks and `.at()` are recent and `#private`
+     * fields only became safe around Hermes 0.12 / RN 0.71. Emitting ES2020
+     * keeps this package's own output inside what every supported Hermes can
+     * run, and `test/hermes-surface.test.ts` plus the simulator harness in
+     * `example/` are what check the claim rather than this comment.
+     *
+     * The dependency `@trackcore/sdk` is built at ES2022 and does use `#private`
+     * fields. That is verified under a real Hermes rather than assumed; see the
+     * README's "Hermes" section.
+     */
+    "target": "ES2020",
+    /*
+     * "DOM" is present because `@trackcore/sdk`'s public types are written
+     * against the fetch standard (`Response`, `RequestInit`, `AbortSignal`) and
+     * this package consumes them honestly rather than through `any`.
+     *
+     * React Native is NOT a browser, so the DOM lib here is a licence to lie.
+     * `test/no-browser-assumptions.test.ts` greps `src/` for `document`,
+     * `window`, `localStorage` and friends and fails the build if one appears.
+     */
+    "lib": ["ES2020", "DOM"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "useUnknownInCatchVariables": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "example/**/*.ts"]
+}
