@@ -54,6 +54,7 @@
 
 import {
   TrackCore,
+  type BarcodeLookup,
   type BatchFoodsOptions,
   type BatchReadResult,
   type CapabilityCatalogue,
@@ -61,9 +62,15 @@ import {
   type FetchLike,
   type Food,
   type GetFoodOptions,
+  type ExtractLabelOptions,
+  type LabelImage,
+  type RecognizeImageOptions,
+  type SearchSpeechOptions,
+  type LookupBarcodeOptions,
   type ProbeOk,
   type ResponseCache,
   type RetryPolicy,
+  type JsonObject,
   type SearchFoodsParams,
   type SearchResults,
   type Transport,
@@ -207,6 +214,55 @@ export class TrackCoreClient {
      */
     batch: (ids: readonly string[], options?: BatchFoodsOptions): Promise<BatchReadResult> =>
       this.inner.foods.batch(ids, options),
+  };
+
+  readonly barcode = {
+    /**
+     * `GET /v1/foods/barcode/{code}`. A miss resolves; it does not throw.
+     *
+     * Camera scanning is `@trackcore/react-native-scanner`, which uses
+     * `react-native-camera-kit`. This core does not export it.
+     */
+    lookup: (code: string, options?: LookupBarcodeOptions): Promise<BarcodeLookup> =>
+      this.inner.barcode.lookup(code, options),
+  };
+
+  readonly label = {
+    /**
+     * `POST /v1/label`. Sends a photo and returns the extraction.
+     *
+     * Does not open a camera. Capture or pick the photo in the app, then pass
+     * the bytes here. A photo that is not a label resolves with `food` null.
+     */
+    extract: (image: LabelImage, options?: ExtractLabelOptions): Promise<JsonObject> =>
+      this.inner.label.extract(image, options),
+  };
+
+  readonly image = {
+    /**
+     * `POST /v1/image/food`. Sends a meal photo and returns TrackCore foods.
+     * Does not open a camera.
+     */
+    food: (image: LabelImage, options?: RecognizeImageOptions): Promise<JsonObject> =>
+      this.inner.image.food(image, options),
+    /**
+     * `POST /v1/image/fridge`. Same recognition, for a fridge photo.
+     * Requires `ai.fridge`.
+     */
+    fridge: (image: LabelImage, options?: RecognizeImageOptions): Promise<JsonObject> =>
+      this.inner.image.fridge(image, options),
+  };
+
+  readonly nlp = {
+    /** `POST /v1/nlp` with a transcript. Ten catalog foods. */
+    search: (text: string, options?: SearchSpeechOptions): Promise<JsonObject> =>
+      this.inner.nlp.search(text, options),
+    /**
+     * `POST /v1/nlp` with a recording. whisper.cpp transcribes it, then the
+     * catalog is searched. Pass bytes the app already recorded.
+     */
+    fromSpeech: (audio: LabelImage, options?: SearchSpeechOptions): Promise<JsonObject> =>
+      this.inner.nlp.fromSpeech(audio, options),
   };
 
   readonly capabilities = {

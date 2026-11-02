@@ -126,12 +126,14 @@ export {
   searchFoods,
   getFood,
   batchFoods,
+  lookupBarcode,
   BATCH_MAX_IDS,
   QUERY_MAX_LENGTH,
   QUERY_MIN_LENGTH,
   type BatchFoodsOptions,
   type GetFoodOptions,
   type HasTransport,
+  type LookupBarcodeOptions,
   type SearchFoodsParams,
 } from "@trackcore/sdk";
 
@@ -139,6 +141,9 @@ export {
 // Models — T-107 regenerates these in `@trackcore/sdk`; none is written here
 // ---------------------------------------------------------------------------
 export type {
+  BarcodeFormat,
+  BarcodeLookup,
+  BarcodeStatus,
   BatchReadResult,
   Capability,
   CapabilityCatalogue,

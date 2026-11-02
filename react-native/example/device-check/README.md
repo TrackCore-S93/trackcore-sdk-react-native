@@ -28,7 +28,7 @@ parser that could not read a single live response.
 cd <repo root>
 go build -o /tmp/nutd ./services/nutrition/cmd/nutritiond
 NUTRITION_LISTEN_ADDR=127.0.0.1:9733 \
-  FOOD_API_BASE_URL=https://api.studio93.io/food \
+  FOOD_API_BASE_URL=https://api.studio93.io \
   FOOD_API_KEY=<the provider key — never commit it> \
   /tmp/nutd &
 ```

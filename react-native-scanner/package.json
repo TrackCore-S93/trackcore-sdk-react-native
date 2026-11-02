@@ -1,0 +1,34 @@
+{
+  "name": "@trackcore/react-native-scanner",
+  "version": "0.1.0",
+  "description": "TrackCore barcode camera for React Native. Optional. Uses react-native-camera-kit. The core device SDK does not depend on it.",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@trackcore/react-native": "file:../react-native",
+    "react": ">=18.2.0",
+    "react-native": ">=0.72.0",
+    "react-native-camera-kit": ">=15.0.0"
+  },
+  "devDependencies": {
+    "@trackcore/react-native": "file:../react-native",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^18.3.18",
+    "jest": "^30.0.0",
+    "react": "^18.3.1",
+    "react-native": "^0.76.9",
+    "react-native-camera-kit": "^18.0.0",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.9.3"
+  }
+}
