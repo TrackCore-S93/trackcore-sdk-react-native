@@ -100,6 +100,32 @@ describe("transport, retry and errors are one implementation", () => {
   it("exports the same in-memory ETag store", () => {
     expect(rn.MemoryResponseCache).toBe(js.MemoryResponseCache);
   });
+
+  it("exports the same end-user identity rules (D-012)", () => {
+    // `setUser` is a member on `TrackCoreClient`, but the rules behind it are
+    // not this package's. Three SDKs each enforcing "the same" validation from
+    // three sources is how they stop being the same; one function object
+    // shared by two of them is how they cannot.
+    expect(rn.assertValidExternalId).toBe(js.assertValidExternalId);
+    expect(rn.EXTERNAL_ID_HEADER).toBe(js.EXTERNAL_ID_HEADER);
+    expect(rn.EXTERNAL_ID_MAX_CODE_POINTS).toBe(js.EXTERNAL_ID_MAX_CODE_POINTS);
+  });
+
+  it("adds no ConfigurationError reason of its own", () => {
+    // A reason this package invented would be one a customer could branch on
+    // here and not in the web SDK. `ConfigurationError` is shared by identity,
+    // so the proof is that the thrown object is the shared class.
+    let thrown: unknown;
+    try {
+      rn.assertValidExternalId(" padded");
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(js.ConfigurationError);
+    expect((thrown as InstanceType<typeof js.ConfigurationError>).reason).toBe(
+      "external_id_untrimmed",
+    );
+  });
 });
 
 describe("the retry policy was not quietly relaxed for a device", () => {

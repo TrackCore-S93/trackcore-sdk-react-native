@@ -25,6 +25,16 @@ describe("what the core exports", () => {
     expect(typeof rn.createReactNativeFetch).toBe("function");
     expect(typeof rn.AsyncStorageResponseCache).toBe("function");
   });
+
+  it("exports the identity symbols, so a sign-in form can validate without a client", () => {
+    // D-012. These are `@trackcore/sdk`'s, re-exported — `identity.test.ts`
+    // asserts the object identities. They are here so an app can check the id
+    // it is about to pass at the boundary where it is typed or read, rather
+    // than discovering the problem from a throw inside `setUser`.
+    expect(typeof rn.assertValidExternalId).toBe("function");
+    expect(rn.EXTERNAL_ID_HEADER).toBe("X-External-Id");
+    expect(rn.EXTERNAL_ID_MAX_CODE_POINTS).toBe(255);
+  });
 });
 
 describe("what the core does not export", () => {
@@ -90,16 +100,63 @@ describe("the client's shape", () => {
     expect(typeof client.health).toBe("function");
   });
 
-  it("exposes no scaling or diary method on the client", () => {
+  it("exposes setUser, clearUser and a read-only externalId (D-012, SDK-C9)", () => {
+    const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
+    expect(typeof client.setUser).toBe("function");
+    expect(typeof client.clearUser).toBe("function");
+    expect(client.externalId).toBeNull();
+
+    // The names are fixed across all three SDKs, so a developer moving between
+    // the Flutter app and the React Native one does not have to look them up.
+    const descriptor = Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(client) as object,
+      "externalId",
+    );
+    expect(typeof descriptor?.get).toBe("function");
+    // Read-only: the only ways to change it are setUser and clearUser, both of
+    // which go through the shared validator.
+    expect(descriptor?.set).toBeUndefined();
+  });
+
+  it("does its nutrition arithmetic nowhere (SDK-C2, DM-N10)", () => {
+    // This used to assert that `diary` and `log` were absent too, which was
+    // right while the diary did not exist. It does now, and `diary.log` is a
+    // server call: the entry, its snapshot and its scaled nutrition are all
+    // computed by the gateway.
+    //
+    // What stays forbidden is the SDK doing the arithmetic itself. `scale`,
+    // `sum` and `normalise` on the client are the exact shape of the code that
+    // dropped 12 of 19 nutrients in the customer's own app, which is why
+    // `POST /v1/foods/scale` is a route and not a method here.
     const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
     const surface = [
       ...Object.keys(client),
       ...Object.getOwnPropertyNames(Object.getPrototypeOf(client) as object),
       ...Object.keys(client.foods),
+      ...Object.keys(client.diary),
     ];
-    for (const forbidden of ["scale", "log", "diary", "sum", "normalise", "normalize"]) {
+    for (const forbidden of ["scale", "sum", "normalise", "normalize"]) {
       expect(surface).not.toContain(forbidden);
     }
+  });
+
+  it("exposes the diary and session surface the device path needs (T-126)", () => {
+    const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
+    for (const method of ["day", "meals", "range", "log", "editPortion", "createMeal", "favourites", "recents"]) {
+      expect(typeof (client.diary as Record<string, unknown>)[method]).toBe("function");
+    }
+    expect(typeof client.setSession).toBe("function");
+    expect(typeof client.clearSession).toBe("function");
+    expect(client.sessionToken).toBeNull();
+
+    // Read-only, like externalId: the only ways to change it are setSession and
+    // clearSession.
+    const descriptor = Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(client) as object,
+      "sessionToken",
+    );
+    expect(typeof descriptor?.get).toBe("function");
+    expect(descriptor?.set).toBeUndefined();
   });
 
   it("reports the credential by prefix and last four, never the key", () => {

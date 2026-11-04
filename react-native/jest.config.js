@@ -16,10 +16,17 @@
  *
  * The live suite is excluded by default: it drives a real nutrition service and
  * needs `TRACKCORE_LIVE_BASE_URL`. Run it with `npm run test:live`.
+ *
+ * `globalSetup` builds `@trackcore/sdk` first, because this suite resolves it
+ * to `../js/dist/index.cjs` and nothing else was building it — a green run
+ * here certified whatever `dist` happened to contain (BUG-025). The whole
+ * argument, including why the dependency is built rather than path-mapped to
+ * `../js/src`, is at the top of `jest.global-setup.js`.
  */
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
+  globalSetup: "<rootDir>/jest.global-setup.js",
   roots: ["<rootDir>/test"],
   testMatch: ["**/*.test.ts"],
   testPathIgnorePatterns: process.env.TRACKCORE_LIVE_BASE_URL ? [] : ["/test/live\\.test\\.ts$"],

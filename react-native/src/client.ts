@@ -74,6 +74,22 @@ import {
   type SearchFoodsParams,
   type SearchResults,
   type Transport,
+  type DayParams,
+  type RangeParams,
+  type LogFoodParams,
+  type EditPortionParams,
+  type CreateMealParams,
+  type EditMealParams,
+  type CopyParams,
+  type DailyNutrition,
+  type DiaryMeals,
+  type DiaryRange,
+  type DiaryMeal,
+  type LoggedFood,
+  type CardList,
+  type DeletionReceipt,
+  type ReorderResult,
+  type CopyResult,
 } from "@trackcore/sdk";
 
 import { assertDeviceSafeApiKey } from "./credentials";
@@ -188,6 +204,203 @@ export class TrackCoreClient {
   get transport(): Transport {
     return this.inner.transport;
   }
+
+  /**
+   * Attributes every **subsequent** request to one of your end users (D-012).
+   *
+   * `externalId` is your app's own identifier for the signed-in person — a
+   * Firebase UID, a row id, a ULID — not a TrackCore one. There is no "create
+   * user" call to await first: the gateway upserts the matching `app_user` row
+   * the first time it sees the pair `(your customer id, this id)`, so this is a
+   * local assignment that stores a string and returns. Call it wherever the app
+   * learns who is signed in — a `useEffect` on the auth state, the resolution
+   * of a restored session — and `clearUser()` at sign-out.
+   *
+   * ```ts
+   * auth().onAuthStateChanged((user) => {
+   *   if (user) client.setUser(user.uid);
+   *   else client.clearUser();
+   * });
+   * ```
+   *
+   * From here on every request **this client** makes carries
+   * `X-External-Id: <externalId>`: the food reads, the label, image and NLP
+   * posts, the revalidating conditional reads that come back `304`, and
+   * `health()`. The header is written once in `@trackcore/sdk`'s transport
+   * rather than per method, which is why there is no call that can forget it.
+   * Calling this again switches user; a refused id leaves the previous one in
+   * place, so a bad call can never silently sign somebody out.
+   *
+   * Throws `ConfigurationError` synchronously, before anything is sent, when
+   * the id is one the gateway would refuse — padded, empty, over 255 Unicode
+   * code points — or one an HTTP header in JavaScript cannot carry unchanged,
+   * which is this SDK's own extra rule. `reason` names the broken rule. The
+   * rules, and the long argument for the ASCII one, live in `@trackcore/sdk`'s
+   * `src/identity.ts`; this package deliberately does not restate them, because
+   * three SDKs enforcing "the same" rules from three sources is how they stop
+   * being the same. `assertValidExternalId` is re-exported from `../src/index`
+   * if you want the same check at a sign-in form's boundary.
+   *
+   * **The ETag cache is not cleared on a user switch**, and does not need to
+   * be. Everything this SDK caches is catalogue data — a food's nutrition is
+   * identical for every end user — and nothing user-scoped is written to
+   * `AsyncStorage` at all. Clearing it would throw away a device's warm cache
+   * on every sign-in for no benefit, and on a metered connection that is a
+   * cost somebody pays. The Flutter SDK made the same call for the same
+   * reason; if that ever stops being true, all three change together.
+   */
+  setUser(externalId: string): void {
+    this.inner.setUser(externalId);
+  }
+
+  /**
+   * Stops attributing requests to an end user. This is sign-out.
+   *
+   * The header is then **absent**, not blank — and the two are *the same
+   * thing* to the gateway, which is worth stating precisely because this
+   * comment used to claim the opposite. `provisionUser`
+   * (`services/gateway/internal/httpx/guard.go`) reads the header with Go's
+   * `Header.Get`, which answers `""` for a header that is missing and for one
+   * that is present and empty alike, `net/textproto` having already stripped
+   * the surrounding whitespace. Both take the early return and provision
+   * nobody. Neither is a `400`.
+   *
+   * Omitting it entirely is still what this SDK does, and is still the safer
+   * of the two: a signed-out request then has exactly one shape on the wire,
+   * it is what the gateway's own contract comment asks for, and it is the
+   * behaviour that stays correct if the blank case is ever tightened to a
+   * `400`. Safe to call when no user was ever set.
+   *
+   * This is the only way to clear. `setUser(null)` throws rather than signing
+   * the user out — from untyped JavaScript that would otherwise turn a bug in
+   * the caller's auth plumbing into silently unattributed traffic.
+   */
+  clearUser(): void {
+    this.inner.clearUser();
+  }
+
+  /**
+   * The end user requests are currently attributed to, or `null` when none is
+   * set.
+   *
+   * Exactly the string passed to {@link setUser}; TrackCore's internal id is
+   * never spoken aloud (PF-T3, DM-T2). Named the same in the JavaScript and
+   * Flutter SDKs (SDK-C9).
+   */
+  get externalId(): string | null {
+    return this.inner.externalId;
+  }
+
+  /**
+   * Sets the end-user session token this device carries (T-126).
+   *
+   * **This is how a React Native app reaches one end user's diary.** A
+   * publishable key alone cannot: it says which customer, not which person, and
+   * the gateway answers `403 user_scope_violation` to a diary call made with
+   * one. The token says which person.
+   *
+   * It is minted by **your own backend**, not here — `auth.createSession`
+   * requires a secret key, which must never ship in an app binary. The shape
+   * is:
+   *
+   * ```ts
+   * // your backend, with the secret key
+   * const { session_token } = await serverClient.auth.createSession({ externalId: uid });
+   *
+   * // the device, with the publishable key
+   * client.setSession(session_token);
+   * await client.diary.day({ date: todayLocal });
+   * ```
+   *
+   * On `401 session_expired`, ask your backend for a fresh token and call this
+   * again. The SDK cannot refresh for you: it has no route to your backend, and
+   * a device able to mint its own replacement would be a device able to mint
+   * one for anybody.
+   *
+   * Until OQ-10 is settled this flow requires every mobile customer to run a
+   * backend. That is a product question, not a limitation of this method.
+   */
+  setSession(sessionToken: string): void {
+    this.inner.setSession(sessionToken);
+  }
+
+  /** Clears the session token. The client is then scoped to no end user. */
+  clearSession(): void {
+    this.inner.clearSession();
+  }
+
+  /** The session token currently carried, or `null`. */
+  get sessionToken(): string | null {
+    return this.inner.sessionToken;
+  }
+
+  /**
+   * One end user's food log. Needs `setSession` on a device, or `setUser` when
+   * this client runs somewhere a secret key is safe.
+   */
+  readonly diary = {
+    /** `GET /v1/diary/day`. Empty days are a 200 with zeroes, never a 404. */
+    day: (params: DayParams): Promise<DailyNutrition> => this.inner.diary.day(params),
+    /** `GET /v1/diary/meals`. Entries carry no food snapshot — see the JS SDK. */
+    meals: (params: DayParams): Promise<DiaryMeals> => this.inner.diary.meals(params),
+    /** `GET /v1/diary/range`. Inclusive, gaps zeroed, capped at 366 days. */
+    range: (params: RangeParams): Promise<DiaryRange> => this.inner.diary.range(params),
+    /** `POST /v1/diary/entries`. Stores a full snapshot of the food (P-002). */
+    log: (params: LogFoodParams): Promise<LoggedFood> => this.inner.diary.log(params),
+    /** `PATCH /v1/diary/entries/{id}`. Resolved from the snapshot, no refetch. */
+    editPortion: (params: EditPortionParams): Promise<LoggedFood> => this.inner.diary.editPortion(params),
+    /** `DELETE /v1/diary/entries/{id}`. */
+    deleteEntry: (entryId: string, options?: { signal?: AbortSignal }): Promise<DeletionReceipt> =>
+      this.inner.diary.deleteEntry(entryId, options),
+    /** `POST /v1/diary/entries/reorder`. Name every entry in the meal. */
+    reorder: (params: { mealId: string; entryIds: readonly string[]; signal?: AbortSignal }): Promise<ReorderResult> =>
+      this.inner.diary.reorder(params),
+    /** `POST /v1/diary/meals`. Same minute merges and returns 200 (DM-M1). */
+    createMeal: (params: CreateMealParams): Promise<DiaryMeal> => this.inner.diary.createMeal(params),
+    /** `PATCH /v1/diary/meals/{id}`. Moves the meal, not the entries in it. */
+    editMeal: (params: EditMealParams): Promise<DiaryMeal> => this.inner.diary.editMeal(params),
+    /** `DELETE /v1/diary/meals/{id}`. Takes its entries with it. */
+    deleteMeal: (mealId: string, options?: { signal?: AbortSignal }): Promise<DeletionReceipt> =>
+      this.inner.diary.deleteMeal(mealId, options),
+    /** `POST /v1/diary/meals/{id}/copy`. Copies keep the original's snapshot. */
+    copyMeal: (mealId: string, params: CopyParams & { idempotencyKey?: string }): Promise<CopyResult> =>
+      this.inner.diary.copyMeal(mealId, params),
+    /** `POST /v1/diary/day/copy`. */
+    copyDay: (params: CopyParams & { localDate: string; idempotencyKey?: string }): Promise<CopyResult> =>
+      this.inner.diary.copyDay(params),
+    /** `DELETE /v1/diary/day`. Clearing an empty day is a 200 with 0. */
+    clearDay: (params: { date: string; signal?: AbortSignal }): Promise<DeletionReceipt> =>
+      this.inner.diary.clearDay(params),
+    /** `GET /v1/diary/favourites`. Cards render without a second request. */
+    favourites: (options?: { limit?: number; signal?: AbortSignal }): Promise<CardList> =>
+      this.inner.diary.favourites(options),
+    /** `POST /v1/diary/favourites/{food_id}`. Starring twice is fine. */
+    addFavourite: (foodId: string, options?: { signal?: AbortSignal }): Promise<unknown> =>
+      this.inner.diary.addFavourite(foodId, options),
+    /** `DELETE /v1/diary/favourites/{food_id}`. */
+    removeFavourite: (foodId: string, options?: { signal?: AbortSignal }): Promise<DeletionReceipt> =>
+      this.inner.diary.removeFavourite(foodId, options),
+    /** `GET /v1/diary/recents`. Written by logging; capped at 50, LRU evicted. */
+    recents: (options?: { limit?: number; signal?: AbortSignal }): Promise<CardList> =>
+      this.inner.diary.recents(options),
+    /** `GET /v1/diary/foods/search`. The end user's own foods, not the provider's. */
+    searchOwnFoods: (params: { q: string; limit?: number; signal?: AbortSignal }): Promise<unknown> =>
+      this.inner.diary.searchOwnFoods(params),
+  };
+
+  // There is deliberately NO `auth` namespace here.
+  //
+  // `POST /v1/auth/session` requires a secret key, and this client refuses to
+  // be constructed with one — `assertDeviceSafeApiKey` throws, and no setting
+  // disables it. So a `createSession` method on this class could never be
+  // reached: the only client that can call it is one that cannot exist.
+  //
+  // Exposing it anyway would be worse than omitting it. A developer would find
+  // the method, call it, and get a ConfigurationError from the *constructor*
+  // rather than from the thing they were trying to do.
+  //
+  // Mint the token on your own server with `@trackcore/sdk`, then hand it here
+  // with `setSession`. That split is the point of the design, not a gap in it.
 
   readonly foods = {
     /**

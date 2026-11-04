@@ -222,6 +222,68 @@ For memory only, pass `new MemoryResponseCache()` instead.
 
 ---
 
+## Identifying your end users
+
+TrackCore never asks you to adopt TrackCore's idea of a user (D-012). You pass
+**your own** identifier — a Firebase UID, a row id, a ULID — and the gateway
+creates the matching record the first time it sees it, keyed to your account.
+There is no "create user" call to await first, and the API only ever speaks
+your id back to you.
+
+```ts
+auth().onAuthStateChanged((user) => {
+  if (user) client.setUser(user.uid);   // at sign-in
+  else client.clearUser();              // at sign-out
+});
+
+client.externalId;                      // the current id, or null
+```
+
+`setUser` is synchronous and makes no network call: it stores a string, and
+every request **this client** makes from then on carries it as `X-External-Id`
+— the food reads, the label, image and NLP posts, the revalidating `304` reads
+and `health()` alike. Before `setUser`, and after `clearUser`, the header is
+**not sent at all** rather than sent empty. The gateway cannot tell those two
+apart — it reads an absent `X-External-Id` and a present-but-empty one
+identically, and both mean "provision nobody" — so omitting it is not a way of
+dodging a `400`. It is how a signed-out request keeps one unambiguous shape on
+the wire: nothing to misread, and still correct if the blank case is ever
+tightened.
+
+Because the client holds the id, this belongs wherever your auth state lives —
+one client for the app, told who is signed in — rather than being threaded
+through every screen that calls the SDK.
+
+A bad id throws `ConfigurationError` on the spot, before anything is sent, with
+a `reason` naming the rule it broke: whitespace-padded, empty, over 255 Unicode
+code points, or outside printable ASCII. **The rules and the reasons are the
+JavaScript SDK's** — this package re-exports them rather than restating them,
+which is what keeps the three SDKs from drifting — so the table and the full
+argument for the ASCII rule are in [`sdks/js/README.md`][js-identity], under
+"Identifying your end users". The short version: an HTTP header is bytes, a
+code point in `U+0080`–`U+00FF` goes out as one Latin-1 byte and arrives as a
+*different, valid-looking* id, and that provisions a second user and splits one
+person's history in two without failing or logging anything.
+
+`assertValidExternalId`, `EXTERNAL_ID_HEADER` and `EXTERNAL_ID_MAX_CODE_POINTS`
+are exported from this package too, so a sign-in screen can apply the same
+check at its own boundary:
+
+```ts
+import { assertValidExternalId } from "@trackcore/react-native";
+```
+
+Switching user does **not** clear the ETag cache, and does not need to.
+Everything stored is catalogue data — a food's nutrition is identical for every
+end user — and nothing user-scoped is written to `AsyncStorage` at all.
+Clearing on every sign-in would throw away a warm device cache and make the
+next screen pay for a full body over a metered connection. The Flutter SDK
+makes the same call.
+
+[js-identity]: ../js/README.md#identifying-your-end-users
+
+---
+
 ## Errors
 
 Two families. `TrackCoreAPIError` means the server answered in the contract
@@ -354,6 +416,7 @@ src/
 test/
   credentials.test.ts      the refusal, and the BUG-022 class of hole
   shared-core.test.ts      object-identity proof that nothing is forked
+  identity.test.ts         setUser/clearUser: the header, and the pass-through
   source-rules.test.ts     greps: no JSON.parse on a response path, no DOM, no scaling
   cache.test.ts            the storage codec and the write-behind queue
   fetch.test.ts            the abort race and the text-only body rule

@@ -12,7 +12,10 @@
     "README.md"
   ],
   "scripts": {
+    "build:deps": "npm --prefix ../js run build",
+    "prebuild": "npm run build:deps",
     "build": "tsc -p tsconfig.build.json",
+    "pretypecheck": "npm run build:deps",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:live": "TRACKCORE_LIVE_BASE_URL=${TRACKCORE_LIVE_BASE_URL} jest --testPathPatterns live",

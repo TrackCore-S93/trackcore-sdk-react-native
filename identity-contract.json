@@ -1,0 +1,17 @@
+{
+  "$comment": "Shared end-user identity contract (D-012). Every SDK test suite reads THIS file rather than pinning its own literals, so slug or limit drift between the SDKs fails a test instead of shipping. Source of truth for the first three values is services/gateway/internal/httpx/guard.go (validExternalID); binding this file to that Go code with an assertion on the Go side is a follow-up, not done yet.",
+  "headerName": "X-External-Id",
+  "maxCodePoints": 255,
+  "minCodePoint": 32,
+  "maxCodePointValue": 126,
+  "reasons": {
+    "untrimmed": "external_id_untrimmed",
+    "empty": "external_id_empty",
+    "tooLong": "external_id_too_long",
+    "notAscii": "external_id_not_ascii"
+  },
+  "javascriptOnlyReasons": {
+    "$comment": "Unreachable in Dart: setUser(String) rules it out at compile time. Its absence in Flutter is parity, not an omission.",
+    "notAString": "external_id_not_a_string"
+  }
+}

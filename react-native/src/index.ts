@@ -76,6 +76,27 @@ export {
 } from "./environment";
 
 // ---------------------------------------------------------------------------
+// End-user identity (D-012)
+// ---------------------------------------------------------------------------
+/*
+ * `setUser` / `clearUser` / `externalId` are members on `TrackCoreClient`.
+ * These three are the pieces an app needs *without* a client: a sign-in screen
+ * validating the id it is about to hand over, a test fixture asserting on the
+ * header name, a settings form checking a pasted id against the real limit.
+ *
+ * Re-exported, not redeclared — the rules, the header spelling and the
+ * `ConfigurationError` reasons are `@trackcore/sdk`'s, and there is no second
+ * copy of them anywhere in this package. `test/identity.test.ts` asserts the
+ * object identities, which is what keeps the three SDKs from drifting into
+ * "nearly the same" validation.
+ */
+export {
+  EXTERNAL_ID_HEADER,
+  EXTERNAL_ID_MAX_CODE_POINTS,
+  assertValidExternalId,
+} from "@trackcore/sdk";
+
+// ---------------------------------------------------------------------------
 // The numeric contract — one `Decimal` in the product, imported, never copied
 // ---------------------------------------------------------------------------
 export { Decimal, isDecimal } from "@trackcore/sdk";
@@ -217,4 +238,37 @@ export {
   JsonParseError,
   type JsonObject,
   type JsonValue,
+} from "@trackcore/sdk";
+
+// ---------------------------------------------------------------------------
+// Diary, custom foods and sessions — re-exported, not redeclared
+// ---------------------------------------------------------------------------
+export { SESSION_HEADER } from "@trackcore/sdk";
+export type {
+  DayParams,
+  RangeParams,
+  LogFoodParams,
+  EditPortionParams,
+  CreateMealParams,
+  EditMealParams,
+  CopyParams,
+  CustomServing,
+  CreateCustomFoodParams,
+  RecipeIngredient,
+  CreateRecipeParams,
+  CreateSessionParams,
+  DailyNutrition,
+  DiaryMealEntry,
+  MealFlags,
+  DiaryMeal,
+  DiaryMeals,
+  DiaryRangeDay,
+  DiaryRange,
+  LoggedFood,
+  Card,
+  CardList,
+  DeletionReceipt,
+  ReorderResult,
+  CopyResult,
+  SessionToken,
 } from "@trackcore/sdk";
