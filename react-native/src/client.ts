@@ -81,6 +81,8 @@ import {
   type CreateMealParams,
   type EditMealParams,
   type CopyParams,
+  type CreateCustomFoodParams,
+  type CreateRecipeParams,
   type DailyNutrition,
   type DiaryMeals,
   type DiaryRange,
@@ -427,6 +429,27 @@ export class TrackCoreClient {
      */
     batch: (ids: readonly string[], options?: BatchFoodsOptions): Promise<BatchReadResult> =>
       this.inner.foods.batch(ids, options),
+    /**
+     * The end user's own foods. Under `foods` rather than a namespace of its
+     * own because a custom food **is** a food: it comes back in the same shape
+     * and `foods.get` resolves one (DM-F6).
+     */
+    custom: {
+      /** `POST /v1/foods/custom`. Nutrient values must be numbers, not strings. */
+      create: (params: CreateCustomFoodParams): Promise<Food> =>
+        this.inner.foods.custom.create(params),
+      /**
+       * `DELETE /v1/foods/custom/{food_id}`. Past diary entries that used it
+       * keep working — an entry stores a copy of the food, not a reference.
+       */
+      delete: (foodId: string, options?: { signal?: AbortSignal }): Promise<DeletionReceipt> =>
+        this.inner.foods.custom.delete(foodId, options),
+    },
+    /** `POST /v1/foods/recipes`. Nutrition is summed server-side, losing nothing. */
+    recipes: {
+      create: (params: CreateRecipeParams): Promise<Food> =>
+        this.inner.foods.recipes.create(params),
+    },
   };
 
   readonly barcode = {
