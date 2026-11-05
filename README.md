@@ -74,9 +74,17 @@ Use a publishable key in the app and keep the secret key on your own server.
 
 ## Installation
 
+The package is consumed from its git repository; it is not on the npm registry.
+
 ```sh
-npm install @trackcore/react-native
+npm install github:TrackCore-S93/trackcore-sdk-react-native#main
 ```
+
+Pin a release with `#v0.1.0` (a tag or commit) in place of `#main`. The
+`prepare` script builds `dist/` during the install, and the JavaScript SDK it
+is built on (`@trackcore/sdk`) is pulled from its own repository the same way.
+The optional barcode camera is a separate package,
+[`@trackcore/react-native-scanner`](https://github.com/TrackCore-S93/trackcore-sdk-react-native-scanner).
 
 This package has **no native modules of its own**. It imports nothing from
 `react-native` at runtime: every platform dependency is injected, which is what
@@ -259,7 +267,7 @@ a `reason` naming the rule it broke: whitespace-padded, empty, over 255 Unicode
 code points, or outside printable ASCII. **The rules and the reasons are the
 JavaScript SDK's** — this package re-exports them rather than restating them,
 which is what keeps the three SDKs from drifting — so the table and the full
-argument for the ASCII rule are in [`sdks/js/README.md`][js-identity], under
+argument for the ASCII rule are in the [JavaScript SDK README][js-identity], under
 "Identifying your end users". The short version: an HTTP header is bytes, a
 code point in `U+0080`–`U+00FF` goes out as one Latin-1 byte and arrives as a
 *different, valid-looking* id, and that provisions a second user and splits one
@@ -280,7 +288,7 @@ Clearing on every sign-in would throw away a warm device cache and make the
 next screen pay for a full body over a metered connection. The Flutter SDK
 makes the same call.
 
-[js-identity]: ../js/README.md#identifying-your-end-users
+[js-identity]: https://github.com/TrackCore-S93/trackcore-sdk-js#identifying-your-end-users
 
 ---
 

@@ -96,7 +96,7 @@ interface IdentityContract {
 }
 
 const CONTRACT = JSON.parse(
-  readFileSync(join(__dirname, "..", "..", "identity-contract.json"), "utf8"),
+  readFileSync(join(__dirname, "..", "identity-contract.json"), "utf8"),
 ) as IdentityContract;
 
 /** The `reason` `assertValidExternalId` refused `value` with. Throws if it did not. */
@@ -622,7 +622,7 @@ describe("the identity surface is the JavaScript SDK's, not a copy of it", () =>
   });
 
   it("agrees with the cross-SDK contract fixture, not only with itself", () => {
-    // `sdks/identity-contract.json` is the one checked-in statement of the
+    // `identity-contract.json` at the repository root is the one checked-in statement of the
     // header name, the limit, the code-point bounds and the reason slugs.
     // Until it existed, parity between the JavaScript, Flutter and React
     // Native suites rested on three teams independently typing the same
