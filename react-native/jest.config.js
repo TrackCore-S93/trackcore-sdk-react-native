@@ -18,7 +18,7 @@
  * needs `TRACKCORE_LIVE_BASE_URL`. Run it with `npm run test:live`.
  *
  * `globalSetup` builds `@trackcore/sdk` first, because this suite resolves it
- * to `../js/dist/index.cjs` and nothing else was building it — a green run
+ * to `@trackcore/sdk/dist/index.cjs`, built by that package's `prepare` script — a green run
  * here certified whatever `dist` happened to contain (BUG-025). The whole
  * argument, including why the dependency is built rather than path-mapped to
  * `../js/src`, is at the top of `jest.global-setup.js`.

@@ -12,17 +12,14 @@
     "README.md"
   ],
   "scripts": {
-    "build:deps": "npm --prefix ../js run build",
-    "prebuild": "npm run build:deps",
     "build": "tsc -p tsconfig.build.json",
-    "pretypecheck": "npm run build:deps",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:live": "TRACKCORE_LIVE_BASE_URL=${TRACKCORE_LIVE_BASE_URL} jest --testPathPatterns live",
     "example": "ts-node --compiler-options {\"module\":\"commonjs\"} example/quickstart.ts"
   },
   "dependencies": {
-    "@trackcore/sdk": "file:../js"
+    "@trackcore/sdk": "github:TrackCore-S93/trackcore-sdk-js#main"
   },
   "peerDependencies": {
     "@react-native-async-storage/async-storage": ">=1.21.0",
