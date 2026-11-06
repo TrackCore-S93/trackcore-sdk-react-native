@@ -75,10 +75,15 @@ Use a publishable key in the app and keep the secret key on your own server.
 ## Installation
 
 The package is not on the npm registry. Every release carries the built
-package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL:
+package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL
+(yarn 2 and later want the package name in front of it):
 
 ```sh
 npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.1.0/trackcore-react-native-0.1.0.tgz
+bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.1.0/trackcore-react-native-0.1.0.tgz
+pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.1.0/trackcore-react-native-0.1.0.tgz
+yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.1.0/trackcore-react-native-0.1.0.tgz            # yarn 1
+yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.1.0/trackcore-react-native-0.1.0.tgz     # yarn 2 and later
 ```
 
 The releases are listed at
