@@ -74,15 +74,21 @@ Use a publishable key in the app and keep the secret key on your own server.
 
 ## Installation
 
-The package is consumed from its git repository; it is not on the npm registry.
+The package is not on the npm registry. Every release carries the built
+package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL:
 
 ```sh
-npm install github:TrackCore-S93/trackcore-sdk-react-native#main
+npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.1.0/trackcore-react-native-0.1.0.tgz
 ```
 
-Pin a release with `#v0.1.0` (a tag or commit) in place of `#main`. The
-`prepare` script builds `dist/` during the install, and the JavaScript SDK it
-is built on (`@trackcore/sdk`) is pulled from its own repository the same way.
+The releases are listed at
+https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases; change
+`v0.1.0` (twice) to pin another one. The JavaScript SDK this package is built
+on (`@trackcore/sdk`) is pinned to its own release tarball in `package.json`,
+so it arrives built as well. Installing from git
+(`npm install github:TrackCore-S93/trackcore-sdk-react-native#main`) also works
+under npm, whose `prepare` step builds `dist/` during the install. Bun does not
+run that step, so under Bun only the tarball works.
 The optional barcode camera is a separate package,
 [`@trackcore/react-native-scanner`](https://github.com/TrackCore-S93/trackcore-sdk-react-native-scanner).
 

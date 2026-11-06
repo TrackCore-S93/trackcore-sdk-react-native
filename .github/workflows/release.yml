@@ -1,0 +1,83 @@
+# Builds the package and attaches it to a GitHub release when a `v*` tag is
+# pushed.
+#
+# Why a release carries a tarball
+#
+# The package is installed from this repository, not from the npm registry.
+# `npm install github:…` clones it and runs the `prepare` script, which builds
+# `dist/`. Bun does not: it installs a git dependency without the package's
+# devDependencies and without running `prepare`, so the checkout has no `dist/`
+# and nothing can be imported. A tarball produced by `npm pack` is the package
+# as it would sit on a registry, `dist/` included, and every package manager
+# (npm, Bun, pnpm, yarn) installs it from a plain URL with no credentials.
+#
+# How to cut a release
+#
+#   1. Set `version` in package.json (the tag must match it, with a `v` in
+#      front), commit, and push to main.
+#   2. git tag v0.1.0 && git push origin v0.1.0
+#
+# The job refuses a tag whose version differs from package.json, runs the test
+# suite, and publishes `<name>-<version>.tgz` on the release named after the
+# tag. Customers install with
+#
+#   npm install https://github.com/<owner>/<repo>/releases/download/v0.1.0/<name>-0.1.0.tgz
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check that the tag matches package.json
+        run: |
+          set -eu
+          version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match package.json version ${version}" >&2
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Pack
+        id: pack
+        # `npm pack` prints the build log of the `prepare` step before the file
+        # name, so the name is derived from package.json instead of captured.
+        run: |
+          set -eu
+          tarball="$(node -p "require('./package.json').name.replace(/^@/, '').replace('/', '-') + '-' + require('./package.json').version + '.tgz'")"
+          npm pack
+          test -f "${tarball}"
+          tar tzf "${tarball}" | grep -q '^package/dist/' || { echo "no dist/ in ${tarball}" >&2; exit 1; }
+          echo "tarball=${tarball}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          set -eu
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${TARBALL}"
+          notes="$(printf 'Built package, ready to install with npm, Bun, pnpm or yarn:\n\n```sh\nnpm install %s\n```\n' "${url}")"
+          gh release create "${GITHUB_REF_NAME}" "${TARBALL}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "${notes}" \
+            --verify-tag
