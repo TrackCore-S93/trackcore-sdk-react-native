@@ -403,6 +403,12 @@ export class TrackCoreClient {
   //
   // Mint the token on your own server with `@trackcore/sdk`, then hand it here
   // with `setSession`. That split is the point of the design, not a gap in it.
+  //
+  // The same goes for `users` — `DELETE /v1/users/{external_id}`, the GDPR
+  // erasure (PF-T5). It needs a secret key for the same reason: the most
+  // destructive call in the API must not be reachable with a credential that
+  // ships inside an app binary. When your user deletes their account, your
+  // backend calls `serverClient.users.delete(uid)` with `@trackcore/sdk`.
 
   readonly foods = {
     /**

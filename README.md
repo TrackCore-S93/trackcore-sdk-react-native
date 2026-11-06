@@ -281,6 +281,14 @@ check at its own boundary:
 import { assertValidExternalId } from "@trackcore/react-native";
 ```
 
+**Deleting an account.** When a user deletes their account, their TrackCore
+data has to go too. That is `DELETE /v1/users/{external_id}` (PF-T5), it needs
+the secret key, and so it is **not on this client**: your backend calls
+`serverClient.users.delete(uid)` with `@trackcore/sdk` from the same code path
+that deletes the account everywhere else, and gets back a receipt counting the
+rows removed per table. On the device, `clearUser()` and `clearSession()` are
+all that is left to do.
+
 Switching user does **not** clear the ETag cache, and does not need to.
 Everything stored is catalogue data — a food's nutrition is identical for every
 end user — and nothing user-scoped is written to `AsyncStorage` at all.

@@ -140,6 +140,14 @@ describe("the client's shape", () => {
     }
   });
 
+  it("has no auth or users namespace — both need a secret key, which a device never holds", () => {
+    // `auth.createSession` mints device tokens; `users.delete` is the GDPR
+    // erasure (PF-T5). Both live in `@trackcore/sdk` on the customer's server.
+    const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
+    expect((client as unknown as Record<string, unknown>)["auth"]).toBeUndefined();
+    expect((client as unknown as Record<string, unknown>)["users"]).toBeUndefined();
+  });
+
   it("exposes the diary and session surface the device path needs (T-126)", () => {
     const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
     for (const method of ["day", "meals", "range", "log", "editPortion", "createMeal", "favourites", "recents"]) {
