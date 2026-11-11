@@ -95,7 +95,9 @@ so it arrives built as well. Installing from git
 under npm, whose `prepare` step builds `dist/` during the install. Bun does not
 run that step, so under Bun only the tarball works.
 The optional barcode camera is a separate package,
-[`@trackcore/react-native-scanner`](https://github.com/TrackCore-S93/trackcore-sdk-react-native-scanner).
+[`@trackcore/react-native-scanner`](https://github.com/TrackCore-S93/trackcore-sdk-react-native-scanner),
+and so is photo capture for a label, a meal or a fridge,
+[`@trackcore/react-native-capture`](https://github.com/TrackCore-S93/trackcore-sdk-react-native-capture).
 
 This package has **no native modules of its own**. It imports nothing from
 `react-native` at runtime: every platform dependency is injected, which is what
