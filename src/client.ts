@@ -73,6 +73,7 @@ import {
   type JsonObject,
   type SearchFoodsParams,
   type SearchResults,
+  type NlpResult,
   type Transport,
   type DayParams,
   type RangeParams,
@@ -496,14 +497,18 @@ export class TrackCoreClient {
   };
 
   readonly nlp = {
-    /** `POST /v1/nlp` with a transcript. Ten catalog foods. */
-    search: (text: string, options?: SearchSpeechOptions): Promise<JsonObject> =>
+    /**
+     * `POST /v1/nlp` with a transcript. The sentence comes back split into
+     * items, each resolved to a food, a serving and the nutrition for the
+     * spoken quantity, ready for a "your meal" screen and `diary.log`.
+     */
+    search: (text: string, options?: SearchSpeechOptions): Promise<NlpResult> =>
       this.inner.nlp.search(text, options),
     /**
      * `POST /v1/nlp` with a recording. whisper.cpp transcribes it, then the
      * catalog is searched. Pass bytes the app already recorded.
      */
-    fromSpeech: (audio: LabelImage, options?: SearchSpeechOptions): Promise<JsonObject> =>
+    fromSpeech: (audio: LabelImage, options?: SearchSpeechOptions): Promise<NlpResult> =>
       this.inner.nlp.fromSpeech(audio, options),
   };
 
