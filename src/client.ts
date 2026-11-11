@@ -93,6 +93,22 @@ import {
   type DeletionReceipt,
   type ReorderResult,
   type CopyResult,
+  type SetGoalParams,
+  type GoalParams,
+  type Goal,
+  type ProfilePatch,
+  type ProfileReadOptions,
+  type Profile,
+  type CalculateParams,
+  type CalculateResult,
+  type LogHealthParams,
+  type HealthRecordsParams,
+  type DeleteHealthParams,
+  type HealthDailyParams,
+  type HealthUploadResult,
+  type HealthRecords,
+  type HealthDeleteResult,
+  type HealthDaily,
 } from "@trackcore/sdk";
 
 import { assertDeviceSafeApiKey } from "./credentials";
@@ -389,6 +405,52 @@ export class TrackCoreClient {
     /** `GET /v1/diary/foods/search`. The end user's own foods, not the provider's. */
     searchOwnFoods: (params: { q: string; limit?: number; signal?: AbortSignal }): Promise<unknown> =>
       this.inner.diary.searchOwnFoods(params),
+    /**
+     * `PUT /v1/diary/goal`. The daily targets the app sets: nutrients, water
+     * and steps. Applies from today forward only; nothing back-dates a goal.
+     */
+    setGoal: (params: SetGoalParams): Promise<Goal> => this.inner.diary.setGoal(params),
+    /** `GET /v1/diary/goal`. The goal as it stood on a day; 404 before any was set. */
+    goal: (params?: GoalParams): Promise<Goal> => this.inner.diary.goal(params),
+  };
+
+  /**
+   * The end user's nutrition profile: sex, date of birth, height, activity
+   * level, goal direction and target weight. Needs `setSession` first, like
+   * the diary. A `set` is a patch: absent keeps, `null` clears.
+   */
+  readonly profile = {
+    /** `GET /v1/profile`. Every attribute is null until given. */
+    get: (options?: ProfileReadOptions): Promise<Profile> => this.inner.profile.get(options),
+    /** `PUT /v1/profile`. */
+    set: (patch: ProfilePatch): Promise<Profile> => this.inner.profile.set(patch),
+  };
+
+  /**
+   * Weight, water, steps and the other health values, encrypted at rest.
+   * Needs `setSession`, the `health.sync` entitlement and a Data Processing
+   * Agreement on file for the customer. This core reads no platform health
+   * store: pass values the app already has, such as a glass of water the
+   * user tapped or a weight they typed. A manual entry is a batch of one.
+   */
+  readonly healthData = {
+    /** `POST /v1/health/records`. */
+    log: (params: LogHealthParams): Promise<HealthUploadResult> => this.inner.healthData.log(params),
+    /** `GET /v1/health/records`. Decrypted, newest first. */
+    records: (params?: HealthRecordsParams): Promise<HealthRecords> => this.inner.healthData.records(params),
+    /** `GET /v1/health/daily`. Per-day totals over local days. */
+    daily: (params: HealthDailyParams): Promise<HealthDaily> => this.inner.healthData.daily(params),
+    /** `DELETE /v1/health/records`. Bounded by type and window. */
+    delete: (params: DeleteHealthParams): Promise<HealthDeleteResult> => this.inner.healthData.delete(params),
+  };
+
+  readonly nutrition = {
+    /**
+     * `POST /v1/nutrition/calculate`. BMR and TDEE; the daily targets come
+     * back null and are named in `undecided_fields`. Set them with
+     * `diary.setGoal`.
+     */
+    calculate: (params: CalculateParams): Promise<CalculateResult> => this.inner.nutrition.calculate(params),
   };
 
   // There is deliberately NO `auth` namespace here.

@@ -1,6 +1,6 @@
 {
   "name": "@trackcore/react-native",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TrackCore React Native SDK core — the JavaScript SDK's transport, retry policy, error mapping, decimal parser and credential handling, specialised for a device.",
   "license": "UNLICENSED",
   "private": true,
@@ -20,7 +20,7 @@
     "example": "ts-node --compiler-options {\"module\":\"commonjs\"} example/quickstart.ts"
   },
   "dependencies": {
-    "@trackcore/sdk": "https://github.com/TrackCore-S93/trackcore-sdk-js/releases/download/v0.2.0/trackcore-sdk-0.2.0.tgz"
+    "@trackcore/sdk": "https://github.com/TrackCore-S93/trackcore-sdk-js/releases/download/v0.3.0/trackcore-sdk-0.3.0.tgz"
   },
   "peerDependencies": {
     "@react-native-async-storage/async-storage": ">=1.21.0",

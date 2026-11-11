@@ -100,6 +100,21 @@ describe("the client's shape", () => {
     expect(typeof client.health).toBe("function");
   });
 
+  it("exposes the profile, goals, health values and the calculator (0019)", () => {
+    const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
+    expect(typeof client.profile.get).toBe("function");
+    expect(typeof client.profile.set).toBe("function");
+    expect(typeof client.diary.setGoal).toBe("function");
+    expect(typeof client.diary.goal).toBe("function");
+    expect(typeof client.healthData.log).toBe("function");
+    expect(typeof client.healthData.records).toBe("function");
+    expect(typeof client.healthData.daily).toBe("function");
+    expect(typeof client.healthData.delete).toBe("function");
+    expect(typeof client.nutrition.calculate).toBe("function");
+    // The liveness probe keeps its name beside the health-values namespace.
+    expect(typeof client.health).toBe("function");
+  });
+
   it("exposes setUser, clearUser and a read-only externalId (D-012, SDK-C9)", () => {
     const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
     expect(typeof client.setUser).toBe("function");
