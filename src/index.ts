@@ -55,6 +55,7 @@ export {
   VERSION,
   type TrackCoreClientOptions,
 } from "./client";
+export { TrackCore, TrackCoreInstance, type ConfigureOptions } from "./instance";
 
 // ---------------------------------------------------------------------------
 // The specialisations

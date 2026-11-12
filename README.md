@@ -79,7 +79,7 @@ package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL
 (yarn 2 and later want the package name in front of it):
 
 ```sh
-npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.2/trackcore-react-native-0.3.2.tgz
+npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.4.0/trackcore-react-native-0.4.0.tgz
 bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz
 pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz
 yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz            # yarn 1
@@ -88,7 +88,7 @@ yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-
 
 The releases are listed at
 https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases; change
-`v0.3.2` (twice) to pin another one. The JavaScript SDK this package is built
+`v0.4.0` (twice) to pin another one. The JavaScript SDK this package is built
 on (`@trackcore/sdk`) is pinned to its own release tarball in `package.json`,
 so it arrives built as well. Installing from git
 (`npm install github:TrackCore-S93/trackcore-sdk-react-native#main`) also works
@@ -128,12 +128,19 @@ Architecture — see **Hermes** below for what was measured and what was not.
 ## Quick start
 
 ```ts
-import { createTrackCoreClient } from "@trackcore/react-native";
+import { TrackCore } from "@trackcore/react-native";
 
-const client = createTrackCoreClient({
+// Once, at app start.
+TrackCore.instance.configure({
   apiKey: "tc_pk_live_…",   // publishable. A tc_sk_ key throws here.
+  baseUrl: "http://143.198.239.216",
 });
 
+// After your own sign-in. Names the user; the session is minted and renewed by the SDK.
+await TrackCore.instance.initialize(user.id);
+
+// Anywhere in the app from then on.
+const client = TrackCore.instance;
 const page = await client.foods.search({ q: "apple", pageSize: 20 });
 
 // An empty page is a 200 and means "no matches".
@@ -165,6 +172,8 @@ for (const id of batch.missing) {
   markUnresolvable(id);   // keep the user's entry; do not delete, do not substitute
 }
 ```
+
+`TrackCore.instance.signOut()` on sign-out. `createTrackCoreClient(options)` builds a client you hold yourself, with the same namespaces, for a test harness or a second key.
 
 A complete runnable version is in `example/quickstart.ts`
 (`npm run example`).

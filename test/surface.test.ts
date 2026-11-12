@@ -12,6 +12,7 @@
  * core must not pre-announce them.
  */
 
+import * as js from "@trackcore/sdk";
 import * as rn from "../src";
 
 describe("what the core exports", () => {
@@ -41,9 +42,15 @@ describe("what the core does not export", () => {
   const names = Object.keys(rn);
 
   it("does not re-export the JavaScript SDK's browser-detecting client", () => {
-    // `TrackCore` classifies React Native as runtime "unknown" and therefore
-    // only *warns* about a secret key. Shipping it here would ship a bypass.
-    expect(names).not.toContain("TrackCore");
+    // The JavaScript `TrackCore` classifies React Native as runtime "unknown"
+    // and therefore only *warns* about a secret key. Shipping it here would
+    // ship a bypass. This package's `TrackCore` is the singleton holder,
+    // which has no constructor and builds its client through the device
+    // guard.
+    expect(rn.TrackCore).not.toBe(js.TrackCore);
+    expect(typeof rn.TrackCore.instance.configure).toBe("function");
+    // Its client is built through the device guard, so a secret key is refused.
+    expect(() => rn.TrackCore.instance.configure({ apiKey: `tc_sk_live_${"k".repeat(43)}`, baseUrl: "http://127.0.0.1:1" })).toThrow();
   });
 
   it("does not re-export the runtime detector or the Credential holder", () => {
