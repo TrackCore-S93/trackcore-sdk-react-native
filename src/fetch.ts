@@ -130,7 +130,7 @@ export interface ReactNativeFetchOptions {
 }
 
 /** Kept in step with package.json. */
-export const VERSION = "0.3.1";
+export const VERSION = "0.3.2";
 
 /**
  * Builds the `FetchLike` that `Transport` will call.

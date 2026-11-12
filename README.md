@@ -79,7 +79,7 @@ package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL
 (yarn 2 and later want the package name in front of it):
 
 ```sh
-npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz
+npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.2/trackcore-react-native-0.3.2.tgz
 bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz
 pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz
 yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.3.1/trackcore-react-native-0.3.1.tgz            # yarn 1
@@ -88,7 +88,7 @@ yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-
 
 The releases are listed at
 https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases; change
-`v0.3.1` (twice) to pin another one. The JavaScript SDK this package is built
+`v0.3.2` (twice) to pin another one. The JavaScript SDK this package is built
 on (`@trackcore/sdk`) is pinned to its own release tarball in `package.json`,
 so it arrives built as well. Installing from git
 (`npm install github:TrackCore-S93/trackcore-sdk-react-native#main`) also works
