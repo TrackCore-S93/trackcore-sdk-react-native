@@ -6,7 +6,7 @@
  * even if the platform ignores it.
  */
 
-import { AbortError, createReactNativeFetch, type FetchLike } from "../src";
+import { AbortError, TimeoutError, createReactNativeFetch, createTrackCoreClient, type FetchLike } from "../src";
 
 function textResponse(body: string, init: ResponseInit = {}): Response {
   return new Response(body, { status: 200, headers: { "Content-Type": "application/json" }, ...init });
@@ -78,8 +78,10 @@ describe("the abort race", () => {
 
     controller.abort();
 
-    await expect(pending).rejects.toThrow(AbortError);
     await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    // By name only, never the SDK's AbortError class: that class means the
+    // caller cancelled, and the adapter cannot know who fired the signal.
+    await expect(pending).rejects.not.toBeInstanceOf(AbortError);
   });
 
   it("rejects immediately for a signal that was already aborted", async () => {
@@ -205,5 +207,53 @@ describe("the iOS platform cache is kept out of the way", () => {
       headers: { "X-TrackCore-Client": "not-this" },
     });
     expect(seen["X-TrackCore-Client"]).toMatch(/^trackcore-react-native\//);
+  });
+});
+
+describe("a request that never answers, through the whole client", () => {
+  // Forgecore's reproduction (0.7.0): a hung request came back as AbortError
+  // after one attempt, because the adapter rejected with the SDK's AbortError
+  // class and the transport read that as a caller cancellation.
+  const hangs = (): { fetch: FetchLike; attempts: () => number } => {
+    let attempts = 0;
+    return {
+      fetch: () => {
+        attempts++;
+        return new Promise<Response>(() => {});
+      },
+      attempts: () => attempts,
+    };
+  };
+  const clientOver = (fetch: FetchLike) =>
+    createTrackCoreClient({
+      apiKey: "tc_pk_test_" + "a".repeat(40),
+      baseUrl: "http://example.invalid",
+      timeoutMs: 40,
+      deadlineMs: 400,
+      fetch,
+    });
+
+  it("is a TimeoutError, retried under the policy until the deadline", async () => {
+    const server = hangs();
+    const error = await clientOver(server.fetch)
+      .foods.get("tc_food_0H0MSKADSH7000000000000000")
+      .then(
+        () => null,
+        (cause: unknown) => cause,
+      );
+    expect(error).toBeInstanceOf(TimeoutError);
+    expect(error).not.toBeInstanceOf(AbortError);
+    expect(server.attempts()).toBeGreaterThan(1);
+  });
+
+  it("is an AbortError, with no retry, when the caller cancels", async () => {
+    const server = hangs();
+    const controller = new AbortController();
+    const pending = clientOver(server.fetch).foods.get("tc_food_0H0MSKADSH7000000000000000", {
+      signal: controller.signal,
+    });
+    controller.abort();
+    await expect(pending).rejects.toBeInstanceOf(AbortError);
+    expect(server.attempts()).toBe(1);
   });
 });

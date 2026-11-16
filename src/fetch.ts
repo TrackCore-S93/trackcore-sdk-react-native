@@ -112,7 +112,7 @@
  * tell a device call apart from a server one in a log.
  */
 
-import { AbortError, type FetchLike } from "@trackcore/sdk";
+import type { FetchLike } from "@trackcore/sdk";
 
 /** Options for {@link createReactNativeFetch}. */
 export interface ReactNativeFetchOptions {
@@ -231,21 +231,20 @@ function raceAbort(pending: Promise<Response>, signal: AbortSignal): Promise<Res
 }
 
 /**
- * An `AbortError` by `name`, which is the contract `Transport` reads.
+ * An `AbortError` by `name`, which is the contract `Transport` reads, and
+ * what a platform `fetch` rejects with when its signal fires.
  *
- * `@trackcore/sdk`'s exported `AbortError` class sets `name` from the
- * constructor, so this is that class — not a hand-rolled error that merely
- * looks like one.
+ * Deliberately **not** `@trackcore/sdk`'s `AbortError` class. That class
+ * means "the caller cancelled", and this function cannot know who fired the
+ * signal: it is the transport's per-attempt timer far more often than the
+ * caller. Through 0.7.0 the class was used here, the transport took its type
+ * as proof of a caller cancellation, and every timeout on React Native
+ * surfaced as `AbortError` with no retry. The transport decides, from the
+ * caller's own signal; this only reports that the attempt was aborted.
  */
 function abortError(): Error {
-  const error = new AbortError();
-  // `AbortError extends TrackCoreClientError extends Error` and sets
-  // `this.name = new.target.name`. Under a minifier that renames classes the
-  // name can become a mangled identifier, and `Transport` matches on the
-  // string. Pin it.
-  if (error.name !== "AbortError") {
-    Object.defineProperty(error, "name", { value: "AbortError", configurable: true });
-  }
+  const error = new Error("The request was aborted.");
+  error.name = "AbortError";
   return error;
 }
 
