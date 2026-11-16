@@ -118,6 +118,7 @@ describe("the client's shape", () => {
     expect(typeof client.healthData.daily).toBe("function");
     expect(typeof client.healthData.delete).toBe("function");
     expect(typeof client.nutrition.calculate).toBe("function");
+    expect(typeof client.nutrition.plan).toBe("function");
     // The liveness probe keeps its name beside the health-values namespace.
     expect(typeof client.health).toBe("function");
   });
@@ -214,5 +215,18 @@ describe("the client's shape", () => {
     ).toThrow(
       expect.objectContaining({ reason: "secret_key_in_browser" }) as unknown as Error,
     );
+  });
+});
+
+describe("what the package re-exports from the JavaScript SDK", () => {
+  it("names the error detail helpers and the catalogue", () => {
+    // The docs import these from this package; 0.6.0 re-exported the classes
+    // but not these names, so the import failed.
+    const surface = require("../src/index") as Record<string, unknown>;
+    for (const name of ["isErrorOfReason", "isErrorReason", "isErrorDomain", "errorReasonSpec"]) {
+      expect(typeof surface[name]).toBe("function");
+    }
+    expect(Object.keys(surface["ERROR_REASONS"] as object)).toContain("meal_minute_taken");
+    expect(surface["ALL_ERROR_DOMAINS"]).toContain("diary");
   });
 });

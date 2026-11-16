@@ -101,6 +101,10 @@ import {
   type Profile,
   type CalculateParams,
   type CalculateResult,
+  type Card,
+  type NutritionPlan,
+  type OwnFoodSearchResults,
+  type PlanReadOptions,
   type LogHealthParams,
   type HealthRecordsParams,
   type DeleteHealthParams,
@@ -394,7 +398,7 @@ export class TrackCoreClient {
     favourites: (options?: { limit?: number; signal?: AbortSignal }): Promise<CardList> =>
       this.inner.diary.favourites(options),
     /** `POST /v1/diary/favourites/{food_id}`. Starring twice is fine. */
-    addFavourite: (foodId: string, options?: { signal?: AbortSignal }): Promise<unknown> =>
+    addFavourite: (foodId: string, options?: { signal?: AbortSignal }): Promise<Card> =>
       this.inner.diary.addFavourite(foodId, options),
     /** `DELETE /v1/diary/favourites/{food_id}`. */
     removeFavourite: (foodId: string, options?: { signal?: AbortSignal }): Promise<DeletionReceipt> =>
@@ -403,7 +407,7 @@ export class TrackCoreClient {
     recents: (options?: { limit?: number; signal?: AbortSignal }): Promise<CardList> =>
       this.inner.diary.recents(options),
     /** `GET /v1/diary/foods/search`. The end user's own foods, not the provider's. */
-    searchOwnFoods: (params: { q: string; limit?: number; signal?: AbortSignal }): Promise<unknown> =>
+    searchOwnFoods: (params: { q: string; limit?: number; signal?: AbortSignal }): Promise<OwnFoodSearchResults> =>
       this.inner.diary.searchOwnFoods(params),
     /**
      * `PUT /v1/diary/goal`. The daily targets the app sets: nutrients, water
@@ -446,9 +450,16 @@ export class TrackCoreClient {
 
   readonly nutrition = {
     /**
-     * `POST /v1/nutrition/calculate`. BMR and TDEE; the daily targets come
-     * back null and are named in `undecided_fields`. Set them with
-     * `diary.setGoal`.
+     * `GET /v1/nutrition/plan`. This end user's daily energy and macros,
+     * worked out by the server from their stored profile and current weight.
+     * `ready: false` with `missing` when the profile is incomplete. Store the
+     * plan with `diary.setGoal({ targets: plan.targets, formulaVersion:
+     * plan.plan_version, inputs: plan.inputs, timezone })`.
+     */
+    plan: (options?: PlanReadOptions): Promise<NutritionPlan> => this.inner.nutrition.plan(options),
+    /**
+     * `POST /v1/nutrition/calculate`. BMR and TDEE from the numbers sent and,
+     * with a `goal`, the daily targets.
      */
     calculate: (params: CalculateParams): Promise<CalculateResult> => this.inner.nutrition.calculate(params),
   };
