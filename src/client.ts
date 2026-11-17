@@ -64,7 +64,9 @@ import {
   type GetFoodOptions,
   type ExtractLabelOptions,
   type LabelImage,
+  type PhotosRecognition,
   type RecognizeImageOptions,
+  type RecognizePhotosOptions,
   type SearchSpeechOptions,
   type LookupBarcodeOptions,
   type ProbeOk,
@@ -567,6 +569,20 @@ export class TrackCoreClient {
      */
     fridge: (image: LabelImage, options?: RecognizeImageOptions): Promise<JsonObject> =>
       this.inner.image.fridge(image, options),
+    /**
+     * Several photos of one meal, scanned as one result. Each photo is its
+     * own `POST /v1/image/food`, so each is its own metered scan, with its
+     * own timeout and retries. Up to ten photos.
+     *
+     * A photo that fails is reported in `photos` and counted in `failed`;
+     * the others are kept. The call throws only when every photo failed,
+     * when `signal` aborts, or when the list is empty or too long.
+     */
+    foodPhotos: (images: readonly LabelImage[], options?: RecognizePhotosOptions): Promise<PhotosRecognition> =>
+      this.inner.image.foodPhotos(images, options),
+    /** Several photos of one fridge. Same behaviour as `foodPhotos`. Requires `ai.fridge`. */
+    fridgePhotos: (images: readonly LabelImage[], options?: RecognizePhotosOptions): Promise<PhotosRecognition> =>
+      this.inner.image.fridgePhotos(images, options),
   };
 
   readonly nlp = {

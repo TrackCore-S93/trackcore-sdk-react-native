@@ -123,6 +123,42 @@ describe("the client's shape", () => {
     expect(typeof client.health).toBe("function");
   });
 
+  it("scans several photos as one meal, each as its own request", async () => {
+    const seen: string[] = [];
+    const fetchImpl = (async (input: unknown, init: { body: FormData }) => {
+      const image = init.body.get("image") as Blob;
+      const n = new Uint8Array(await image.arrayBuffer())[3];
+      seen.push(`${String(input).replace(/^.*\/v1/, "/v1")} photo ${n}`);
+      const body =
+        n === 1
+          ? '{"error":{"code":"unsupported_image_format","message":"Only image/jpeg and image/png are accepted.","request_id":"req_1","docs_url":"https://docs.trackcore.dev/errors/unsupported_image_format","retry_after_seconds":null}}'
+          : `{"status":"ok","result_kind":"food","items":[{"label":"food-${n}"}]}`;
+      return {
+        status: n === 1 ? 415 : 200,
+        headers: new Headers({ "Content-Type": "application/json", "X-Request-Id": `req_${n}` }),
+        text: async () => body,
+      };
+    }) as unknown as rn.FetchLike;
+    const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1", fetch: fetchImpl });
+    const photo = (n: number): rn.LabelImage => ({ bytes: new Uint8Array([0xff, 0xd8, 0xff, n]), contentType: "image/jpeg" });
+
+    const meal: rn.PhotosRecognition = await client.image.foodPhotos([photo(0), photo(1), photo(2)], { concurrency: 1 });
+
+    expect(seen).toEqual(["/v1/image/food photo 0", "/v1/image/food photo 1", "/v1/image/food photo 2"]);
+    expect(meal.status).toBe("ok");
+    expect(meal.failed).toBe(1);
+    expect(meal.items).toEqual([{ label: "food-0" }, { label: "food-2" }]);
+    expect(meal.photos.map((p: rn.PhotoScan) => p.status)).toEqual(["ok", "failed", "ok"]);
+    expect(rn.isErrorOfCode(meal.photos[1]?.error, "unsupported_image_format")).toBe(true);
+
+    const fridge = await client.image.fridgePhotos([photo(0)]);
+    expect(seen.at(-1)).toBe("/v1/image/fridge photo 0");
+    expect(fridge.items).toHaveLength(1);
+
+    expect(rn.MAX_PHOTOS_PER_CALL).toBe(10);
+    await expect(client.image.foodPhotos([])).rejects.toBeInstanceOf(TypeError);
+  });
+
   it("exposes setUser, clearUser and a read-only externalId (D-012, SDK-C9)", () => {
     const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
     expect(typeof client.setUser).toBe("function");

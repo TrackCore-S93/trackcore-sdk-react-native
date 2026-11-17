@@ -260,6 +260,18 @@ export {
 // Diary, custom foods and sessions — re-exported, not redeclared
 // ---------------------------------------------------------------------------
 export { SESSION_HEADER } from "@trackcore/sdk";
+
+// Photos. The option and result types of `label.extract`, `image.food` and
+// the several-photo calls, so an app can name what it passes and receives.
+export { MAX_PHOTOS_PER_CALL } from "@trackcore/sdk";
+export type {
+  LabelImage,
+  ExtractLabelOptions,
+  RecognizeImageOptions,
+  RecognizePhotosOptions,
+  PhotosRecognition,
+  PhotoScan,
+} from "@trackcore/sdk";
 export type {
   DayParams,
   RangeParams,
