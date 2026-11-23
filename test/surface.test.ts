@@ -199,6 +199,20 @@ describe("the client's shape", () => {
     }
   });
 
+  it("works out the quantity that logs an amount of a measurement", () => {
+    // `Food.measurements` names one unit per entry. The diary takes a serving
+    // and a quantity, so the amount typed is turned into that quantity here,
+    // exactly. It is a quantity and not a nutrient: the rule above stands.
+    const grams = { consumed_quantity_per_unit: new rn.Decimal("0.01") };
+    const quantity = rn.consumedQuantityFor(grams, 150);
+    // A Decimal, so it is sent as a bare number: the API refuses a string.
+    expect(quantity).toBeInstanceOf(rn.Decimal);
+    expect(quantity.toString()).toBe("1.5");
+    expect(JSON.stringify({ consumed_quantity: quantity })).toBe('{"consumed_quantity":1.5}');
+    expect(rn.consumedQuantityFor({ consumed_quantity_per_unit: new rn.Decimal("1") }, "2.5").toString()).toBe("2.5");
+    expect(() => rn.consumedQuantityFor(grams, 0)).toThrow(RangeError);
+  });
+
   it("has no auth or users namespace — both need a secret key, which a device never holds", () => {
     // `auth.createSession` mints device tokens; `users.delete` is the GDPR
     // erasure (PF-T5). Both live in `@trackcore/sdk` on the customer's server.

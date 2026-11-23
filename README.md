@@ -79,16 +79,16 @@ package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL
 (yarn 2 and later want the package name in front of it):
 
 ```sh
-npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.8.0/trackcore-react-native-0.8.0.tgz
-bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.8.0/trackcore-react-native-0.8.0.tgz
-pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.8.0/trackcore-react-native-0.8.0.tgz
-yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.8.0/trackcore-react-native-0.8.0.tgz            # yarn 1
-yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.8.0/trackcore-react-native-0.8.0.tgz     # yarn 2 and later
+npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz
+bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz
+pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz
+yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz            # yarn 1
+yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz     # yarn 2 and later
 ```
 
 The releases are listed at
 https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases; change
-`v0.8.0` (twice) to pin another one. The JavaScript SDK this package is built
+`v0.9.0` (twice) to pin another one. The JavaScript SDK this package is built
 on (`@trackcore/sdk`) is pinned to its own release tarball in `package.json`,
 so it arrives built as well. Installing from git
 (`npm install github:TrackCore-S93/trackcore-sdk-react-native#main`) also works
@@ -179,6 +179,57 @@ A complete runnable version is in `example/quickstart.ts`
 (`npm run example`).
 
 ---
+
+## Showing a food's units: `measurements`
+
+`food.servings` is every portion the provider publishes, in the provider's
+words. `food.measurements` is the same food as the row of chips an Edit food
+screen shows: grams, millilitres where the provider states a volume, ounces,
+then the food's own portions. One entry per unit, a short `label`, sized to
+one whole unit, in display order.
+
+```tsx
+import { consumedQuantityFor, type Food, type Measurement } from "@trackcore/react-native";
+
+function EditFood({ food }: { food: Food }) {
+  const chips = food.measurements.slice(0, 5);                 // already in display order
+  const [picked, setPicked] = useState<Measurement>(chips.find((m) => m.is_default) ?? chips[0]);
+  const [amount, setAmount] = useState(picked.default_amount.toString());
+
+  const save = () =>
+    client.diary.log({
+      foodId: food.food_id,
+      selectedServingId: picked.serving_id,
+      consumedQuantity: consumedQuantityFor(picked, amount),
+      localDate,
+      timezone,
+      mealName: "Lunch",
+    });
+  // chips.map((m) => <Chip key={m.label} label={m.label} hint={m.detail} ... />)
+}
+```
+
+| Field | What it is |
+|---|---|
+| `label` | The chip text: `g`, `ml`, `oz`, `small`, `cup cooked`. |
+| `detail` | The rest of the provider's wording, or `null`: `yield after cooking, bone removed`. |
+| `kind` | `weight`, `volume` or `portion`. The first two take any amount; a portion is counted. |
+| `serving_id` | What to send as `selectedServingId`. |
+| `consumed_quantity_per_unit` | The diary quantity for one of the unit. `consumedQuantityFor` applies it. |
+| `default_amount` | The amount to open on: 100 for `g` and `ml` as a rule, 1 for a portion. |
+| `weight_g`, `volume_ml` | What one of the unit weighs or holds. `null` where the provider does not say. |
+| `is_default` | `true` on one entry, the first. |
+| `nutrition` | For one of the unit, unrounded. |
+
+Always go through `consumedQuantityFor(measurement, amount)`. It is `amount ×
+consumed_quantity_per_unit` rounded to the four decimals the diary stores, in
+exact decimal arithmetic, returned as a `Decimal` so it is sent as a bare
+number. The factor is 1 on most entries and not on all: a
+`100 g` serving that the provider counts as one logs a gram as `0.01`, so
+sending the typed amount would log a hundred times too much.
+
+Millilitres are listed only where the provider states a volume. A drink
+published only by weight has grams and no millilitres.
 
 ## What this SDK will not do
 
