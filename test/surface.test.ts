@@ -223,8 +223,12 @@ describe("the client's shape", () => {
 
   it("exposes the diary and session surface the device path needs (T-126)", () => {
     const client = rn.createTrackCoreClient({ apiKey, baseUrl: "http://127.0.0.1:1" });
-    for (const method of ["day", "meals", "range", "log", "editPortion", "createMeal", "favourites", "recents"]) {
+    for (const method of ["day", "meals", "range", "log", "editPortion", "createMeal", "favourites", "recents", "searchOwnFoods", "listOwnFoods"]) {
       expect(typeof (client.diary as Record<string, unknown>)[method]).toBe("function");
+    }
+    // A "My foods" screen: create, change and remove a custom food.
+    for (const method of ["create", "update", "delete"]) {
+      expect(typeof (client.foods.custom as Record<string, unknown>)[method]).toBe("function");
     }
     expect(typeof client.setSession).toBe("function");
     expect(typeof client.clearSession).toBe("function");

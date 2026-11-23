@@ -79,16 +79,16 @@ package as a tarball, and npm, Bun, pnpm and yarn all install it from the URL
 (yarn 2 and later want the package name in front of it):
 
 ```sh
-npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz
-bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz
-pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz
-yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz            # yarn 1
-yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.9.0/trackcore-react-native-0.9.0.tgz     # yarn 2 and later
+npm install https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.10.0/trackcore-react-native-0.10.0.tgz
+bun add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.10.0/trackcore-react-native-0.10.0.tgz
+pnpm add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.10.0/trackcore-react-native-0.10.0.tgz
+yarn add https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.10.0/trackcore-react-native-0.10.0.tgz            # yarn 1
+yarn add @trackcore/react-native@https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases/download/v0.10.0/trackcore-react-native-0.10.0.tgz     # yarn 2 and later
 ```
 
 The releases are listed at
 https://github.com/TrackCore-S93/trackcore-sdk-react-native/releases; change
-`v0.9.0` (twice) to pin another one. The JavaScript SDK this package is built
+`v0.10.0` (twice) to pin another one. The JavaScript SDK this package is built
 on (`@trackcore/sdk`) is pinned to its own release tarball in `package.json`,
 so it arrives built as well. Installing from git
 (`npm install github:TrackCore-S93/trackcore-sdk-react-native#main`) also works
@@ -230,6 +230,62 @@ sending the typed amount would log a hundred times too much.
 
 Millilitres are listed only where the provider states a volume. A drink
 published only by weight has grams and no millilitres.
+
+## My foods: list, edit, photo
+
+`client.diary.listOwnFoods` is every food the end user made, custom foods and
+recipes together, newest first. It needs no search term, so it is what a "My
+foods" screen shows before anybody types.
+
+```tsx
+import type { Food } from "@trackcore/react-native";
+
+function MyFoods() {
+  const [foods, setFoods] = useState<Food[]>([]);
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);   // undefined: not loaded yet
+
+  const loadMore = async () => {
+    if (cursor === null) return;                                // null: that was the last page
+    const page = await client.diary.listOwnFoods({ limit: 10, cursor });
+    setFoods((shown) => [...shown, ...page.foods]);
+    setCursor(page.next_cursor);
+  };
+
+  return <FlatList data={foods} keyExtractor={(f) => f.food_id} onEndReached={loadMore} /* ... */ />;
+}
+```
+
+Each food is the same `Food` that `client.foods.get` returns, with its
+servings, nutrition and `measurements`, so a row needs no second read. Pass
+`type: "custom_food"` or `type: "recipe"` to list one kind.
+
+`client.foods.batch` finds these foods too: an id that is one of the end
+user's own comes back in `found`, beside the catalogue's.
+
+`client.foods.custom.update` changes a custom food after it was saved. Only
+what you pass changes, and `null` removes a brand or a photo.
+
+```ts
+await client.foods.custom.update(food.food_id, { name: "Protein bar" });
+await client.foods.custom.update(food.food_id, { brand: null });
+
+await client.foods.custom.update(food.food_id, {
+  servings: [
+    { servingId: food.servings[0].serving_id, description: "1 bar", baseQuantity: 1, nutrition },
+    { description: "half bar", baseQuantity: 1, nutrition: half },        // new: no servingId
+  ],
+});
+```
+
+`servings` is the whole list. A serving passed with its `servingId` keeps that
+id, one without is new, and one left out is removed. Entries already in the
+diary keep the numbers they were logged with. A recipe cannot be edited this
+way.
+
+A food can carry a photo link. Upload the photo to your own storage, then pass
+its `https` address as `imageUrl` to `client.foods.custom.create` or
+`client.foods.custom.update`. It comes back as `food.image_url`. TrackCore
+stores the link, not the image.
 
 ## What this SDK will not do
 

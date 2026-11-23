@@ -85,6 +85,9 @@ import {
   type EditMealParams,
   type CopyParams,
   type CreateCustomFoodParams,
+  type UpdateCustomFoodParams,
+  type ListOwnFoodsParams,
+  type OwnFoodPage,
   type CreateRecipeParams,
   type DailyNutrition,
   type DiaryMeals,
@@ -412,6 +415,14 @@ export class TrackCoreClient {
     searchOwnFoods: (params: { q: string; limit?: number; signal?: AbortSignal }): Promise<OwnFoodSearchResults> =>
       this.inner.diary.searchOwnFoods(params),
     /**
+     * `GET /v1/diary/foods`. Every food the end user made, custom foods and
+     * recipes together, newest first, with no search term. Each one is a whole
+     * `Food`, measurements included. Page with `next_cursor`, which is `null`
+     * on the last page.
+     */
+    listOwnFoods: (params?: ListOwnFoodsParams): Promise<OwnFoodPage> =>
+      this.inner.diary.listOwnFoods(params),
+    /**
      * `PUT /v1/diary/goal`. The daily targets the app sets: nutrients, water
      * and steps. Applies from today forward only; nothing back-dates a goal.
      */
@@ -520,6 +531,13 @@ export class TrackCoreClient {
       /** `POST /v1/foods/custom`. Nutrient values must be numbers, not strings. */
       create: (params: CreateCustomFoodParams): Promise<Food> =>
         this.inner.foods.custom.create(params),
+      /**
+       * `PATCH /v1/foods/custom/{food_id}`. Only what is passed changes;
+       * `null` removes a brand or a photo. Entries already in the diary keep
+       * the numbers they were logged with.
+       */
+      update: (foodId: string, params: UpdateCustomFoodParams): Promise<Food> =>
+        this.inner.foods.custom.update(foodId, params),
       /**
        * `DELETE /v1/foods/custom/{food_id}`. Past diary entries that used it
        * keep working — an entry stores a copy of the food, not a reference.
