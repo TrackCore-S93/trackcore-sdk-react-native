@@ -608,12 +608,21 @@ export class TrackCoreClient {
      * `POST /v1/nlp` with a transcript. The sentence comes back split into
      * items, each resolved to a food, a serving and the nutrition for the
      * spoken quantity, ready for a "your meal" screen and `diary.log`.
+     *
+     * Pass `context` (the previous result's `text`) to apply the sentence to
+     * a meal already described; the result is then the whole meal.
      */
     search: (text: string, options?: SearchSpeechOptions): Promise<NlpResult> =>
       this.inner.nlp.search(text, options),
     /**
      * `POST /v1/nlp` with a recording. whisper.cpp transcribes it, then the
-     * catalog is searched. Pass bytes the app already recorded.
+     * transcript is resolved like `search`. Pass bytes the app already
+     * recorded.
+     *
+     * For a second recording on the same meal ("and a banana", "make that
+     * two eggs", "remove the chicken breast") pass `context`, the previous
+     * result's `text`. One call returns the new recording's `transcript`,
+     * the combined `text`, and the whole meal as it now stands.
      */
     fromSpeech: (audio: LabelImage, options?: SearchSpeechOptions): Promise<NlpResult> =>
       this.inner.nlp.fromSpeech(audio, options),

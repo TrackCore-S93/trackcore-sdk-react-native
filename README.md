@@ -287,6 +287,46 @@ its `https` address as `imageUrl` to `client.foods.custom.create` or
 `client.foods.custom.update`. It comes back as `food.image_url`. TrackCore
 stores the link, not the image.
 
+## Voice log: speak again to change the meal
+
+`client.nlp.fromSpeech` turns a recording into a meal. To let the user add to
+it or change it by recording again, pass what they have said so far as
+`context`. Only the new recording is transcribed, and the result is the whole
+meal after the change, not just what was added.
+
+```tsx
+function VoiceLog() {
+  const [meal, setMeal] = useState<NlpResult | null>(null);
+
+  const onRecorded = async (audio: LabelImage) => {
+    // First recording: no context. After that: everything said so far.
+    const next = await client.nlp.fromSpeech(audio, { context: meal?.text });
+    setMeal(next);
+  };
+
+  // meal.text         "2 eggs. add 1 chicken breast"   show under "You said"
+  // meal.transcript   "add 1 chicken breast"           what the last recording heard
+  // meal.items        2 eggs, 1 chicken breast         the whole meal
+}
+```
+
+| The user says | `context` you pass | `items` you get back |
+| --- | --- | --- |
+| "2 eggs" | nothing | 2 eggs |
+| "add 1 chicken breast" | `"2 eggs"` | 2 eggs, 1 chicken breast |
+| "remove 1 egg" | `"2 eggs. add 1 chicken breast"` | 1 egg, 1 chicken breast |
+
+`context` is always the previous result's `text`. Nothing is kept on the
+server between calls, so pass it every time. `client.nlp.search` takes the
+same option for typed text.
+
+- `context` may be at most 1000 characters. A longer one is a
+  `RequestError` with reason `context_too_long`; start a new meal.
+- The new sentence is 2 to 200 characters, as it is for a first one.
+- A silent recording passed with a `context` returns the meal unchanged, with
+  an empty `transcript`.
+- `cookingMethod` applies to every item in the returned meal.
+
 ## What this SDK will not do
 
 - **No portion scaling, serving normalisation or nutrition summation on the

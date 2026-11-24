@@ -339,6 +339,35 @@ describe("the body-carrying POSTs carry it too — label, image and NLP", () => 
     expect(call.contentType).toMatch(/^multipart\/form-data; boundary=/);
   });
 
+  it("carries a follow-up's context: in the JSON body, and as a form field beside a recording", async () => {
+    const MEAL =
+      '{"text":"2 eggs. add 1 chicken breast","transcript":"add 1 chicken breast","items":[],"results":[]}';
+    const bodies: unknown[] = [];
+    const fetchImpl: FetchLike = async (_url, init) => {
+      bodies.push(init.body);
+      return new Response(MEAL, { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+    const client = createTrackCoreClient({ apiKey: API_KEY, baseUrl: BASE_URL, fetch: fetchImpl });
+
+    const typed = await client.nlp.search("add 1 chicken breast", { context: "2 eggs" });
+    expect(String(bodies[0])).toBe('{"text":"add 1 chicken breast","context":"2 eggs"}');
+    expect(typed.transcript).toBe("add 1 chicken breast");
+    expect(typed.text).toBe("2 eggs. add 1 chicken breast");
+
+    const spoken = await client.nlp.fromSpeech(RECORDING, { context: typed.text });
+    const form = bodies[1];
+    if (!(form instanceof FormData)) throw new Error("expected FormData");
+    expect(form.get("context")).toBe("2 eggs. add 1 chicken breast");
+    expect(form.get("audio")).toBeInstanceOf(Blob);
+    expect(spoken.transcript).toBe("add 1 chicken breast");
+
+    // A first recording sends no context at all.
+    await client.nlp.fromSpeech(RECORDING, { context: undefined });
+    const first = bodies[2];
+    if (!(first instanceof FormData)) throw new Error("expected FormData");
+    expect(first.has("context")).toBe(false);
+  });
+
   it("rides a JSON POST, alongside its application/json Content-Type", async () => {
     const { client, calls } = harness(NLP_OK);
     client.setUser("user_nlp");
