@@ -231,6 +231,46 @@ sending the typed amount would log a hundred times too much.
 Millilitres are listed only where the provider states a volume. A drink
 published only by weight has grams and no millilitres.
 
+A portion sold as an amount keeps the amount in its label, written the way
+the provider wrote it: `6 oz container`, `3 cookies`, `1/3 bar`. A fraction
+stays a fraction.
+
+## The whole package: `package_quantity`
+
+A scanned product is logged by the serving, by the gram, or as the whole
+pack. For the third, a food carries the size of its package where the source
+prints one.
+
+| Field | What it is |
+|---|---|
+| `package_quantity` | The net contents of the whole package: `400` for a 400 g jar. `null` when not known. |
+| `package_unit` | `g` or `ml`. `null` exactly where `package_quantity` is. |
+| `servings_per_container` | How many of the default serving the package holds: `8` for a 240 g box of 30 g servings. `null` when the two are not in the same unit. |
+
+```tsx
+import { consumedQuantityFor, type Food } from "@trackcore/react-native";
+
+function logWholePack(food: Food) {
+  // The package is an amount of grams or millilitres, so it is logged with
+  // the "g" or "ml" unit, the package size as the amount.
+  const unit = food.measurements.find((m) => m.label === food.package_unit);
+  if (food.package_quantity === null || unit === undefined) return null; // fall back to your own guess
+  return client.diary.log({
+    foodId: food.food_id,
+    selectedServingId: unit.serving_id,
+    consumedQuantity: consumedQuantityFor(unit, food.package_quantity),
+    localDate,
+    timezone,
+    mealName: "Snack",
+  });
+}
+```
+
+The three are `null` wherever the size is not known for certain. Open Food
+Facts and USDA branded foods record what is printed on the pack; FatSecret
+states no package size, so a product FatSecret resolved has none. Nothing is guessed: a wrong package
+size logs the wrong meal. Always `null` on a food the end user made.
+
 ## My foods: list, edit, photo
 
 `client.diary.listOwnFoods` is every food the end user made, custom foods and
